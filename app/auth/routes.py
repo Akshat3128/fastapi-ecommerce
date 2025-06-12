@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from . import schemas, models, utils
@@ -6,6 +6,12 @@ from .schemas import UserSignin, TokenOut
 from app.auth.models import User
 from app.auth.utils import verify_password, create_access_token
 from app.auth.utils import get_current_user
+from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt
+from app.core.config import settings
+from .schemas import ForgotPasswordRequest, ResetPasswordRequest
+from .utils import create_reset_token, verify_reset_token
+from app.auth.utils import send_reset_email
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -53,12 +59,37 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
         "role": current_user.role
     }
 
-from fastapi.security import HTTPAuthorizationCredentials
-from jose import JWTError, jwt
-from app.core.config import settings
 @router.get("/me")
 def read_profile(token: HTTPAuthorizationCredentials = Depends(utils.oauth2_scheme)):
     print("Token from Swagger:", token.credentials)
     payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     print("Payload:", payload)
     return payload
+
+
+# //reset routes
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    token = create_reset_token(user.email)
+    send_reset_email(user.email, token)
+
+    return {"message": "Reset email sent"}
+
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    email = verify_reset_token(request.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.hashed_password = utils.hash_password(request.new_password)
+    db.commit()
+    return {"message": "Password reset successful"}

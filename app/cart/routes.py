@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.cart import models, schemas
-from app.auth.utils import get_current_user
+from app.auth.utils import require_user
 from app.auth.models import User
 from app.cart.schemas import CartItemOut
 from typing import List
@@ -19,7 +19,7 @@ def get_db():
 def add_to_cart(
     item: schemas.CartAdd,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     cart_item = db.query(models.CartItem).filter_by(
         user_id=current_user.id, product_id=item.product_id
@@ -44,7 +44,7 @@ def add_to_cart(
 @router.get("/", response_model=List[CartItemOut])
 def get_cart(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     cart_items = db.query(models.CartItem).filter_by(user_id=current_user.id).all()
     return cart_items
@@ -53,9 +53,9 @@ def get_cart(
 @router.put("/{product_id}", response_model=schemas.CartItemOut)
 def update_cart_item(
     product_id: int,
-    item: schemas.CartAdd,  # Reusing same schema
+    item: schemas.CartAdd,  
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     cart_item = db.query(models.CartItem).filter_by(
         user_id=current_user.id, product_id=product_id
@@ -74,7 +74,7 @@ def update_cart_item(
 def remove_from_cart(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     cart_item = db.query(models.CartItem).filter_by(
         user_id=current_user.id, product_id=product_id

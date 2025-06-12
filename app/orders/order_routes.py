@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import SessionLocal
-from app.auth.utils import get_current_user
+from app.auth.utils import require_user
 from app.auth.models import User
 from app.orders import models, schemas
 from typing import List
@@ -19,7 +19,7 @@ def get_db():
 @router.get("/", response_model=List[schemas.OrderOut])
 def get_order_history(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     orders = db.query(models.Order)\
         .options(joinedload(models.Order.items))\
@@ -30,7 +30,7 @@ def get_order_history(
 def get_order_details(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     order = db.query(models.Order)\
         .options(joinedload(models.Order.items))\

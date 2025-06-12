@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
-from app.auth.utils import get_current_user
+from app.auth.utils import require_user
 from app.auth.models import User
 from app.cart.models import CartItem
 from app.products.models import Product
@@ -20,7 +20,7 @@ def get_db():
 @router.post("/", response_model=schemas.OrderOut)
 def checkout(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_user)
 ):
     cart_items = db.query(CartItem).filter_by(user_id=current_user.id).all()
 
