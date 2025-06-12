@@ -1,0 +1,190 @@
+# 🛒 FastAPI E-Commerce Backend
+
+A secure and scalable e-commerce backend built with **FastAPI** and **PostgreSQL**, featuring role-based authentication, product management, cart system, orders, and secure password reset.
+
+---
+
+## 🚀 Features
+
+### ✅ Authentication
+
+* Signup / Signin (JWT)
+* Role-based access: `admin` and `user`
+* Profile endpoint
+* Password hashing with bcrypt
+* Forgot/Reset Password via email (Gmail SMTP)
+
+### 🛍️ Product Management
+
+* Admin-only CRUD operations
+* Public product listing with pagination, filters, and search
+* Product detail view
+
+### 🛒 Cart Management (User Only)
+
+* Add/update/remove items from cart
+* View current cart with nested product info
+
+### 💳 Checkout & Orders (User Only)
+
+* Checkout from cart (dummy payment)
+* Create order with total + items
+* View order history & details
+
+### 🔐 Security & Validation
+
+* JWT for protected routes
+* Role-restricted access (user/admin)
+* Strong validators for email, password, product data
+* SQLAlchemy models with Alembic migrations
+
+---
+
+## 🧱 Tech Stack
+
+* Python 3.11
+* FastAPI
+* PostgreSQL
+* SQLAlchemy ORM
+* Alembic (migrations)
+* Pydantic (data validation)
+* Gmail SMTP (emailing reset tokens)
+
+---
+
+## 📁 Project Structure
+
+```
+app/
+├── auth/               # Signup, signin, JWT, password reset
+│   ├── models.py
+│   ├── schemas.py
+│   ├── routes.py
+│   └── utils.py
+│
+├── products/           # Product CRUD & listing
+│   ├── models.py
+│   ├── schemas.py
+│   ├── routes.py
+│   └── public_routes.py
+│
+├── cart/               # Cart management
+│   ├── models.py
+│   ├── schemas.py
+│   └── routes.py
+│
+├── orders/             # Checkout & order viewing
+│   ├── models.py
+│   ├── schemas.py
+│   ├── checkout_routes.py
+│   └── order_routes.py
+│
+├── core/               # DB setup & config
+│   ├── config.py
+│   └── database.py
+│
+├── main.py             # App entry point
+```
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/Akshat_Saxena/fastapi-ecommerce
+cd fastapi-ecommerce
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
+
+### 2. Setup `.env`
+
+```env
+DATABASE_URL=postgresql://postgres:yourpass@localhost:5432/ecommerce_db
+SECRET_KEY=your_jwt_secret
+ALGORITHM=HS256
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=yourgmail@gmail.com
+EMAIL_PASSWORD=your_app_password
+```
+
+### 3. Run Alembic Migrations
+
+```bash
+alembic upgrade head
+```
+
+### 4. Run the Server
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Visit: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 📫 Reset Password Flow
+
+1. `POST /auth/forgot-password` with email → sends reset token
+2. `POST /auth/reset-password` with token + new password
+
+---
+
+## ✅ Admin vs User Permissions
+
+| Action               | User | Admin |
+| -------------------- | ---- | ----- |
+| Sign Up / Login      | ✅    | ✅     |
+| Access JWT Routes    | ✅    | ✅     |
+| View Products        | ✅    | ✅     |
+| Create/Edit Products | ❌    | ✅     |
+| Use Cart             | ✅    | ❌     |
+| Checkout + Orders    | ✅    | ❌     |
+
+---
+
+## 📌 Notes
+
+* Uses Gmail App Passwords — safe for dev.
+* Email send uses `smtplib`, can switch to SendGrid/SMTP provider.
+* Deployment-ready structure.
+
+---
+
+## 💖 Author
+
+Built by Akshat Saxena 😘
+
+---
+
+## 📜 License
+
+MIT License
+
+```
+Copyright (c) [2025] [AKSHAT SAXENA]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
