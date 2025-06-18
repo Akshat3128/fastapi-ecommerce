@@ -12,6 +12,10 @@ from app.cart import routes as cart_routes
 from app.cart.models import CartItem
 from app.orders import checkout_routes, order_routes
 from app.orders.models import Order, OrderItem
+from starlette.requests import Request
+from app.core.logger import logger
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import HTTPException
 
 Base.metadata.create_all(bind=engine)  # Create tables
 
@@ -19,18 +23,32 @@ app = FastAPI()
 
 print("DB URL:", settings.DATABASE_URL)
 
-app.include_router(auth_routes.router)
-app.include_router(product_routes.router)
-
+app.include_router(auth_routes.router) # auth_routes
 
 app.include_router(product_routes.router)         # /admin/products
 app.include_router(public_products.router)        # /products
 
-app.include_router(cart_routes.router)
+app.include_router(cart_routes.router) # cart_routes
 
-app.include_router(checkout_routes.router)
-app.include_router(order_routes.router)
+app.include_router(checkout_routes.router) # checkout_routes
+app.include_router(order_routes.router) # order_routes
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    ip = request.client.host
+    method = request.method
+    path = request.url.path
+    logger.info(f"[{ip}] {method} {path}")
+    response = await call_next(request)
+    return response
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    logger.error(f"ERROR {exc.status_code} at {request.url.path}: {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 
 # Optional Swagger customization

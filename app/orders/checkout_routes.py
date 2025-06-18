@@ -7,6 +7,8 @@ from app.auth.models import User
 from app.cart.models import CartItem
 from app.products.models import Product
 from app.orders import models, schemas
+from app.core.logger import logger
+
 
 router = APIRouter(prefix="/checkout", tags=["Checkout"])
 
@@ -55,5 +57,6 @@ def checkout(
     db.add(order)
     db.query(CartItem).filter_by(user_id=current_user.id).delete()
     db.commit()
+    logger.info(f"User {current_user.email} placed an order. Total: ₹{total}")
     db.refresh(order)
     return order

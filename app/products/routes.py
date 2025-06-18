@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from . import models, schemas
 from app.auth.utils import require_admin
+from app.core.logger import logger
+from typing import List
+from .models import Product
+from .schemas import ProductOut
 
 router = APIRouter(prefix="/admin/products", tags=["Admin Products"])
 
@@ -23,12 +27,10 @@ def create_product(
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
+    logger.info(f"Product created: {product.name} by {current_user.email}")
     return new_product
 
-from typing import List
-from app.auth.utils import require_admin
-from .models import Product
-from .schemas import ProductOut
+
 
 @router.get("/", response_model=List[ProductOut])
 def get_all_products(
@@ -53,6 +55,7 @@ def update_product(
         setattr(product, key, value)
 
     db.commit()
+    logger.info(f"Product updated: {product_id} by {current_user.email}")
     db.refresh(product)
     return product
 
@@ -69,5 +72,6 @@ def delete_product(
 
     db.delete(product)
     db.commit()
+    logger.info(f"Product deleted: {product_id} by {current_user.email}")
     return {"message": "Product deleted successfully"}
 

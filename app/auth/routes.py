@@ -12,6 +12,8 @@ from app.core.config import settings
 from .schemas import ForgotPasswordRequest, ResetPasswordRequest
 from .utils import create_reset_token, verify_reset_token
 from app.auth.utils import send_reset_email
+from app.core.logger import logger
+
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -26,6 +28,7 @@ def get_db():
 def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing_user:
+        logger.info(f"User Already Exists During Signup: {user_data.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = utils.hash_password(user_data.password)
@@ -38,6 +41,7 @@ def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    logger.info(f"New signup: {user_data.email}")
     return new_user
 
 @router.post("/signin", response_model=TokenOut)
@@ -45,9 +49,11 @@ def signin(user_cred: UserSignin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_cred.email).first()
 
     if not user or not verify_password(user_cred.password, user.hashed_password):
+        logger.warning(f"Failed login attempt for {user_cred.email}")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token(data={"sub": user.email, "role": user.role})
+    logger.info(f"User logged in: {user.email}")
     return {"access_token": token, "token_type": "bearer"}
 
 @router.get("/profile")
@@ -76,7 +82,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
     token = create_reset_token(user.email)
     send_reset_email(user.email, token)
-
+    logger.info(f"Password reset requested for {request.email}")
     return {"message": "Reset email sent"}
 
 
@@ -92,4 +98,5 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
     user.hashed_password = utils.hash_password(request.new_password)
     db.commit()
+    logger.info(f"Password reset completed for {email}")
     return {"message": "Password reset successful"}

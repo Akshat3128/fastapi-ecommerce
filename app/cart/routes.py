@@ -6,6 +6,8 @@ from app.auth.utils import require_user
 from app.auth.models import User
 from app.cart.schemas import CartItemOut
 from typing import List
+from app.core.logger import logger
+
 router = APIRouter(prefix="/cart", tags=["Cart"])
 
 def get_db():
@@ -33,6 +35,7 @@ def add_to_cart(
             product_id=item.product_id,
             quantity=item.quantity
         )
+        logger.info(f"Added to cart: product {item.product_id} x{item.quantity} by {current_user.email}")
         db.add(cart_item)
 
     db.commit()
@@ -47,6 +50,7 @@ def get_cart(
     current_user: User = Depends(require_user)
 ):
     cart_items = db.query(models.CartItem).filter_by(user_id=current_user.id).all()
+    logger.info(f"Cart viewed by: {current_user.email}")
     return cart_items
 
 # update_quantity
@@ -67,6 +71,7 @@ def update_cart_item(
     cart_item.quantity = item.quantity
     db.commit()
     db.refresh(cart_item)
+    logger.info(f"Cart item updated by: {current_user.email}")
     return cart_item
 
 # delete_cart_product
@@ -85,4 +90,5 @@ def remove_from_cart(
 
     db.delete(cart_item)
     db.commit()
+    logger.info(f"Removed product {product_id} from cart by {current_user.email}")
     return {"message": "Item removed from cart"}
